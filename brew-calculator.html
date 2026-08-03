@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Brew Calculator</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f5f0e8;
+    --paper: #fdfaf4;
+    --ink: #1a1612;
+    --muted: #8a7f72;
+    --accent: #c0622a;
+    --rule: #d8cfc3;
+    --step-bg: #f9f5ee;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 2rem 1rem 4rem;
+  }
+
+  .card {
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    width: 100%;
+    max-width: 520px;
+    padding: 2.5rem 2rem;
+    position: relative;
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 6px; left: 6px; right: -6px; bottom: -6px;
+    border: 1px solid var(--rule);
+    z-index: -1;
+  }
+
+  .header {
+    border-bottom: 2px solid var(--ink);
+    padding-bottom: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .header h1 {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 1.75rem;
+    font-weight: 400;
+    line-height: 1.2;
+  }
+
+  .header p {
+    font-size: 0.72rem;
+    color: var(--muted);
+    margin-top: 0.4rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  /* ---------- Recipe tabs ---------- */
+  .tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+    margin-bottom: 1.75rem;
+  }
+
+  .tab {
+    font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 0.65rem 0.5rem;
+    border: 1px solid var(--rule);
+    background: var(--step-bg);
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+    line-height: 1.4;
+  }
+
+  .tab:hover { border-color: var(--ink); color: var(--ink); }
+
+  .tab.active {
+    background: var(--ink);
+    color: var(--paper);
+    border-color: var(--ink);
+  }
+
+  .recipe-blurb {
+    font-size: 0.72rem;
+    color: var(--muted);
+    line-height: 1.6;
+    margin-bottom: 1.75rem;
+    padding-left: 0.9rem;
+    border-left: 2px solid var(--accent);
+    font-style: italic;
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 0.85rem;
+  }
+
+  /* ---------- Inputs ---------- */
+  .controls {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 1.5rem;
+    align-items: start;
+    margin-bottom: 1.75rem;
+  }
+
+  .input-label {
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: block;
+    margin-bottom: 0.5rem;
+  }
+
+  .input-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    border: 1px solid var(--ink);
+    padding: 0.45rem 0.8rem;
+    background: white;
+    width: fit-content;
+  }
+
+  .input-row input {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 2rem;
+    color: var(--accent);
+    background: none;
+    border: none;
+    outline: none;
+    width: 72px;
+    -moz-appearance: textfield;
+  }
+
+  .input-row input::-webkit-outer-spin-button,
+  .input-row input::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+  .input-unit {
+    font-size: 0.8rem;
+    color: var(--muted);
+    align-self: flex-end;
+    padding-bottom: 0.35rem;
+  }
+
+  .ratio-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  .pill {
+    font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.05em;
+    padding: 0.35rem 0.65rem;
+    border: 1px solid var(--rule);
+    cursor: pointer;
+    background: var(--step-bg);
+    color: var(--muted);
+    transition: all 0.15s;
+  }
+
+  .pill:hover { border-color: var(--ink); color: var(--ink); }
+
+  .pill.active {
+    background: var(--accent);
+    color: var(--paper);
+    border-color: var(--accent);
+  }
+
+  .pill-sub {
+    font-size: 0.6rem;
+    color: var(--muted);
+    margin-top: 0.45rem;
+    letter-spacing: 0.04em;
+    line-height: 1.5;
+  }
+
+  /* ---------- Summary ---------- */
+  .summary {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.6rem;
+    margin-bottom: 1.75rem;
+  }
+
+  .summary-item {
+    background: var(--step-bg);
+    border: 1px solid var(--rule);
+    padding: 0.7rem 0.85rem;
+  }
+
+  .summary-item .val {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 1.35rem;
+    color: var(--accent);
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .summary-item .val span {
+    font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 0.68rem;
+    color: var(--muted);
+    margin-left: 2px;
+  }
+
+  .summary-item .lbl {
+    font-size: 0.58rem;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 0.35rem;
+  }
+
+  /* ---------- Steps ---------- */
+  .steps-title {
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .steps-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--rule);
+  }
+
+  .steps { display: flex; flex-direction: column; }
+
+  .step {
+    display: grid;
+    grid-template-columns: 2.2rem 1fr auto;
+    gap: 0.75rem;
+    align-items: start;
+    padding: 0.85rem 0;
+    border-bottom: 1px solid var(--rule);
+    opacity: 0;
+    transform: translateY(6px);
+    animation: fadeUp 0.3s ease forwards;
+  }
+
+  @keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
+
+  .step:last-child { border-bottom: none; }
+
+  .step-num {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 1.05rem;
+    color: var(--accent);
+    font-style: italic;
+    text-align: right;
+    padding-top: 0.1rem;
+  }
+
+  .step-name {
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 500;
+    margin-bottom: 0.2rem;
+  }
+
+  .step-desc {
+    font-size: 0.72rem;
+    color: var(--muted);
+    line-height: 1.55;
+  }
+
+  .step-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.35rem;
+    min-width: 76px;
+  }
+
+  .step-ml {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 1.05rem;
+    color: var(--ink);
+    white-space: nowrap;
+    line-height: 1;
+    text-align: right;
+  }
+
+  .step-ml .unit {
+    font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 0.62rem;
+    color: var(--muted);
+  }
+
+  .step-ml-label {
+    font-size: 0.55rem;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-align: right;
+  }
+
+  .step-total {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 0.92rem;
+    color: var(--accent);
+    white-space: nowrap;
+    line-height: 1;
+    border-top: 1px solid var(--rule);
+    padding-top: 0.3rem;
+    text-align: right;
+  }
+
+  .step-total .unit {
+    font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 0.58rem;
+    color: var(--muted);
+  }
+
+  .step-total-label {
+    font-size: 0.55rem;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--accent);
+    opacity: 0.7;
+    text-align: right;
+  }
+
+  .step-time {
+    font-size: 0.6rem;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+    text-align: right;
+    margin-top: 0.05rem;
+  }
+
+  .step-dash {
+    color: var(--muted);
+    font-size: 0.8rem;
+    padding-top: 0.2rem;
+  }
+
+  /* ---------- Notes ---------- */
+  .notes {
+    margin-top: 1.75rem;
+    padding: 1rem;
+    border: 1px dashed var(--rule);
+    font-size: 0.68rem;
+    color: var(--muted);
+    line-height: 1.75;
+    letter-spacing: 0.02em;
+  }
+
+  .notes strong { color: var(--ink); font-weight: 500; }
+
+  @media (max-width: 430px) {
+    .card { padding: 1.75rem 1.25rem; }
+    .controls { grid-template-columns: 1fr; gap: 1rem; }
+    .summary { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="header">
+    <h1>Brew Calculator</h1>
+    <p>Pour-over &amp; cold brew · scale-friendly</p>
+  </div>
+
+  <div class="tabs" id="tabs"></div>
+
+  <div class="recipe-blurb" id="blurb"></div>
+
+  <div class="controls">
+    <div>
+      <label class="input-label" for="coffeeInput">Coffee dose</label>
+      <div class="input-row">
+        <input type="number" id="coffeeInput" value="15" min="5" max="200" step="0.5">
+        <span class="input-unit">g</span>
+      </div>
+    </div>
+    <div>
+      <span class="input-label">Strength · grams of coffee per liter of water</span>
+      <div class="ratio-pills" id="pills"></div>
+      <p class="pill-sub" id="pillSub"></p>
+    </div>
+  </div>
+
+  <div class="summary" id="summary"></div>
+
+  <div class="steps-title" id="stepsTitle">Brew sequence</div>
+  <div class="steps" id="steps"></div>
+
+  <div class="notes" id="notes"></div>
+</div>
+
+<script>
+  // ---------- helpers ----------
+  const r = n => Math.round(n);
+  const fmt = n => Number.isInteger(n) ? n : n.toFixed(1);
+
+  // pretty ratio for display: g/L -> 1:x
+  const asOneToX = gpl => '1:' + (1000 / gpl).toFixed(1).replace(/\.0$/, '');
+
+  // ---------- recipe definitions ----------
+  const RECIPES = {
+    classic: {
+      label: 'Classic V60',
+      blurb: 'A dependable three-pour structure. Forgiving, balanced, easy to repeat daily.',
+      defaultDose: 15,
+      ratios: [67, 62.5, 59],       // g/L  (≈1:15, 1:16, 1:17)
+      defaultRatio: 62.5,
+      steps(coffee, total) {
+        const bloom = r(coffee * 2.5);
+        const p1 = r(total * 0.4);
+        const p2 = r(total * 0.65);
+        return [
+          { name: 'Rinse & preheat', desc: 'Rinse filter with hot water, discard. Add coffee, level the bed.', time: '0:00' },
+          { name: 'Bloom', desc: 'Slow spiral from center out. Saturate all grounds, let CO₂ escape.', pour: bloom, cum: bloom, time: '0:00 → 0:45' },
+          { name: 'First pour', desc: 'Slow spiral — keep the bed level, don\u2019t agitate.', pour: p1 - bloom, cum: p1, time: '0:45 → 1:15' },
+          { name: 'Second pour', desc: 'As the level drops, continue in a gentle spiral.', pour: p2 - p1, cum: p2, time: '1:15 → 1:45' },
+          { name: 'Final pour', desc: 'Pour slowly down the center to avoid the filter walls.', pour: total - p2, cum: total, time: '1:45 → 2:15' },
+          { name: 'Drain', desc: 'Full draw-down by 3:00–3:30. Faster? Grind finer. Slower? Coarser.', time: '→ 3:00–3:30' }
+        ];
+      },
+      notes: '<strong>Grind:</strong> Medium-fine, like coarse table salt.<br><strong>Temp:</strong> 92–94°C.<br><strong>Target draw-down:</strong> 3:00–3:30 total.'
+    },
+
+    hoffmann: {
+      label: 'Hoffmann Ultimate',
+      blurb: 'James Hoffmann\u2019s Ultimate V60: two big pours, swirls instead of stirring chaos. Designed around a 500 ml brew.',
+      defaultDose: 30,
+      ratios: [55, 60, 65],
+      defaultRatio: 60,
+      steps(coffee, total) {
+        const bloom = r(coffee * 2);
+        const p1 = r(total * 0.6);
+        return [
+          { name: 'Rinse & preheat', desc: 'Rinse filter with water just off the boil. Add coffee, make a small well in the middle.', time: '0:00' },
+          { name: 'Bloom + swirl', desc: 'Pour 2× coffee weight, then swirl the brewer until the slurry is evenly mixed. Bloom to 0:45.', pour: bloom, cum: bloom, time: '0:00 → 0:45' },
+          { name: 'Main pour', desc: 'Pour to 60% of total in 30 seconds. This phase is critical — keep the flow steady.', pour: p1 - bloom, cum: p1, time: '0:45 → 1:15' },
+          { name: 'Second pour', desc: 'Pour slower and more gently to 100%, keeping the cone topped up.', pour: total - p1, cum: total, time: '1:15 → 1:45' },
+          { name: 'Stir + swirl', desc: 'One gentle stir clockwise, one counter — knocks grounds off the walls. Let it drain a little, then a final gentle swirl for a flat bed.', time: '1:45 → 2:00' },
+          { name: 'Drain', desc: 'Aim to finish draw-down by 3:30.', time: '→ 3:30' }
+        ];
+      },
+      notes: '<strong>Grind:</strong> Medium-fine.<br><strong>Temp:</strong> As hot as possible for light roasts; ~95°C works broadly.<br><strong>Signature moves:</strong> the swirl after bloom and the stir + swirl at the end.'
+    },
+
+    hoffmann1cup: {
+      label: 'Hoffmann 1-Cup',
+      blurb: 'Hoffmann\u2019s "Better 1 Cup" method: five equal pulse pours with short rests. Great extraction at small volumes.',
+      defaultDose: 15,
+      ratios: [55, 60, 65],
+      defaultRatio: 60,
+      steps(coffee, total) {
+        const p = r(total * 0.2); // five equal pours of 20%
+        const c1 = p, c2 = r(total * 0.4), c3 = r(total * 0.6), c4 = r(total * 0.8);
+        return [
+          { name: 'Rinse & preheat', desc: 'Rinse filter, add coffee, level the bed.', time: '0:00' },
+          { name: 'Pour 1 — bloom', desc: 'Pour in circles from the center out, then a gentle swirl to mix. Bloom to 0:45.', pour: c1, cum: c1, time: '0:00 → 0:45' },
+          { name: 'Pour 2', desc: 'Steady circular pour over ~10–15 seconds, then rest.', pour: c2 - c1, cum: c2, time: '0:45 → 1:10' },
+          { name: 'Pour 3', desc: 'Same rhythm: pour, then short rest.', pour: c3 - c2, cum: c3, time: '1:10 → 1:30' },
+          { name: 'Pour 4', desc: 'Keep the pours even and unhurried.', pour: c4 - c3, cum: c4, time: '1:30 → 1:50' },
+          { name: 'Pour 5', desc: 'Final pour to full weight, then a gentle swirl to flatten the bed.', pour: total - c4, cum: total, time: '1:50 → 2:05' },
+          { name: 'Drain', desc: 'Draw-down should finish around 3:00, with some natural variance.', time: '→ ~3:00' }
+        ];
+      },
+      notes: '<strong>Grind:</strong> A touch finer than the Ultimate technique.<br><strong>Temp:</strong> ~95°C.<br><strong>Rhythm:</strong> equal pours, ~10 second rests. Hitting the rhythm matters more than nailing each gram.'
+    },
+
+    kasuya: {
+      label: 'Kasuya 4:6',
+      blurb: 'Tetsu Kasuya’s World Brewers Cup winner: five equal pours, 45 seconds apart, each draining fully. First 40% shapes flavor, last 60% sets strength.',
+      defaultDose: 20,
+      ratios: [62.5, 66.7, 71],
+      defaultRatio: 66.7,
+      steps(coffee, total) {
+        const p = r(total * 0.2);
+        const c1 = p, c2 = r(total * 0.4), c3 = r(total * 0.6), c4 = r(total * 0.8);
+        return [
+          { name: 'Rinse & preheat', desc: 'Rinse filter, add coffee ground coarse — like kosher salt. Water at ~92°C (lower for dark roasts).', time: '0:00' },
+          { name: 'Pour 1 · flavor', desc: 'Pour and let it drain completely before the next pour. A bigger pour 1 = brighter cup.', pour: c1, cum: c1, time: '0:00' },
+          { name: 'Pour 2 · flavor', desc: 'Second flavor pour — that’s the first 40% done. A bigger pour 2 = sweeter cup.', pour: c2 - c1, cum: c2, time: '0:45' },
+          { name: 'Pour 3 · strength', desc: 'Strength phase begins.', pour: c3 - c2, cum: c3, time: '1:30' },
+          { name: 'Pour 4 · strength', desc: 'Later pours drain faster, so the gaps shrink. Fewer, bigger pours in this phase = lighter body.', pour: c4 - c3, cum: c4, time: '~2:10' },
+          { name: 'Pour 5 · strength', desc: 'Final pour to full weight.', pour: total - c4, cum: total, time: '~2:45' },
+          { name: 'Drain', desc: 'Full draw-down by ~3:30.', time: '→ 3:30' }
+        ];
+      },
+      notes: '<strong>Grind:</strong> Coarse — coarser than a typical V60 grind.<br><strong>Temp:</strong> ~92°C; 88–90°C for darker roasts.<br><strong>The real timing rule:</strong> pour when the previous pour has fully drained — the listed times are guides, and gaps naturally shorten late in the brew.<br><strong>The dial:</strong> resize pours 1–2 to tune acidity vs. sweetness; merge pours 3–5 for a lighter cup.'
+    },
+
+    iced: {
+      label: 'Iced V60',
+      blurb: 'Japanese-style flash brew: 40% of the water goes in the server as ice, and you brew hot — concentrated — straight onto it. Bright, aromatic iced coffee in three minutes.',
+      defaultDose: 20,
+      ratios: [60, 65, 70],
+      defaultRatio: 65,
+      steps(coffee, total) {
+        const ice = r(total * 0.4);
+        const hot = total - ice;
+        const bloom = r(coffee * 2.5);
+        const p1 = r(hot * 0.6);
+        return [
+          { name: 'Ice the server', desc: `Weigh ${ice} g of ice into your server, then tare the scale with the brewer on top. The ice is 40% of the total water.`, time: '0:00' },
+          { name: 'Rinse & dose', desc: 'Rinse the filter, add coffee ground a touch finer than your usual V60 setting — the shorter hot brew needs the extra extraction.', time: '0:00' },
+          { name: 'Bloom', desc: 'Slow spiral to saturate all grounds. Swirl gently. Bloom to 0:45.', pour: bloom, cum: bloom, time: '0:00 → 0:45' },
+          { name: 'First pour', desc: 'Steady spiral pour — the scale tracks hot water only.', pour: p1 - bloom, cum: p1, time: '0:45 → 1:15' },
+          { name: 'Final pour', desc: 'Pour gently to the full hot-water weight.', pour: hot - p1, cum: hot, time: '1:15 → 1:45' },
+          { name: 'Drain & swirl', desc: 'Draw-down by ~2:30–3:00. Swirl the server until the ice is mostly melted — that completes the dilution and chills it instantly.', time: '→ 3:00' },
+          { name: 'Serve', desc: 'Pour over fresh ice in a glass. Drink it soon — flash brew is best within the hour.' }
+        ];
+      },
+      notes: '<strong>Grind:</strong> Slightly finer than your hot V60 grind.<br><strong>Temp:</strong> 93–95°C — hot water, the ice does the chilling.<br><strong>Split:</strong> 40% ice in the server, 60% brewed hot. The scale numbers above track only the hot water.'
+    }
+  };
+
+  // ---------- state ----------
+  let currentRecipe = 'classic';
+  let currentRatio = RECIPES.classic.defaultRatio;
+
+  // ---------- rendering ----------
+  function renderTabs() {
+    document.getElementById('tabs').innerHTML = Object.entries(RECIPES).map(([key, rec]) =>
+      `<button class="tab ${key === currentRecipe ? 'active' : ''}" data-recipe="${key}">${rec.label}</button>`
+    ).join('');
+  }
+
+  function renderPills() {
+    const rec = RECIPES[currentRecipe];
+    document.getElementById('pills').innerHTML = rec.ratios.map(g => {
+      const extra = rec.ratioLabels ? `<br><span style="font-size:0.55rem; opacity:0.8">${rec.ratioLabels[g]}</span>` : '';
+      return `<button class="pill ${g === currentRatio ? 'active' : ''}" data-ratio="${g}" style="text-align:center; line-height:1.35">${fmt(g)} g/L${extra}</button>`;
+    }).join('');
+    document.getElementById('pillSub').textContent =
+      `${fmt(currentRatio)} g/L ≈ ${asOneToX(currentRatio)} coffee : water`;
+  }
+
+  function switchRecipe(key) {
+    currentRecipe = key;
+    const rec = RECIPES[key];
+    currentRatio = rec.defaultRatio;
+    document.getElementById('coffeeInput').value = rec.defaultDose;
+    renderTabs();
+    renderPills();
+    update();
+  }
+
+  function setRatio(g) {
+    currentRatio = g;
+    renderPills();
+    update();
+  }
+
+  function update() {
+    const rec = RECIPES[currentRecipe];
+    const coffee = parseFloat(document.getElementById('coffeeInput').value) || rec.defaultDose;
+    const total = r(coffee / currentRatio * 1000);
+
+    document.getElementById('blurb').textContent = rec.blurb;
+
+    // summary
+    const cups = total / 250;
+    document.getElementById('summary').innerHTML = `
+      <div class="summary-item">
+        <div class="val">${total}<span>ml</span></div>
+        <div class="lbl">Total water</div>
+      </div>
+      <div class="summary-item">
+        <div class="val">${fmt(coffee)}<span>g</span></div>
+        <div class="lbl">Coffee</div>
+      </div>
+      <div class="summary-item">
+        <div class="val">${cups < 1 ? cups.toFixed(1) : (Math.round(cups * 2) / 2)}<span>cups</span></div>
+        <div class="lbl">≈ 250 ml each</div>
+      </div>`;
+
+    // steps
+    const steps = rec.steps(coffee, total);
+    document.getElementById('steps').innerHTML = steps.map((s, i) => `
+      <div class="step" style="animation-delay:${i * 0.04}s">
+        <div class="step-num">${i + 1}</div>
+        <div>
+          <div class="step-name">${s.name}</div>
+          <div class="step-desc">${s.desc}</div>
+        </div>
+        <div class="step-right">
+          ${s.pour !== undefined ? `
+            <div>
+              <div class="step-ml">${s.pour}<span class="unit"> ml</span></div>
+              <div class="step-ml-label">pour</div>
+            </div>
+            <div>
+              <div class="step-total">${s.cum}<span class="unit"> ml</span></div>
+              <div class="step-total-label">scale reads</div>
+            </div>
+          ` : `<div class="step-dash">—</div>`}
+          ${s.time ? `<div class="step-time">${s.time}</div>` : ''}
+        </div>
+      </div>`).join('');
+
+    document.getElementById('notes').innerHTML = rec.notes;
+  }
+
+  function init() {
+    document.getElementById('coffeeInput').addEventListener('input', update);
+
+    document.getElementById('tabs').addEventListener('click', e => {
+      const btn = e.target.closest('[data-recipe]');
+      if (btn) switchRecipe(btn.dataset.recipe);
+    });
+
+    document.getElementById('pills').addEventListener('click', e => {
+      const btn = e.target.closest('[data-ratio]');
+      if (btn) setRatio(parseFloat(btn.dataset.ratio));
+    });
+
+    renderTabs();
+    renderPills();
+    update();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+</script>
+</body>
+</html>
