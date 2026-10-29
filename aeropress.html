@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AeroPress Recipes</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f5f0e8;
+    --paper: #fdfaf4;
+    --ink: #1a1612;
+    --muted: #8a7f72;
+    --accent: #c0622a;
+    --rule: #d8cfc3;
+    --step-bg: #f9f5ee;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 2rem 1rem 4rem;
+  }
+
+  .card {
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    width: 100%;
+    max-width: 520px;
+    padding: 2.5rem 2rem;
+    position: relative;
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 6px; left: 6px; right: -6px; bottom: -6px;
+    border: 1px solid var(--rule);
+    z-index: -1;
+  }
+
+  .header {
+    border-bottom: 2px solid var(--ink);
+    padding-bottom: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .header h1 {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 1.75rem;
+    font-weight: 400;
+    line-height: 1.2;
+  }
+
+  /* ---------- Recipe tabs ---------- */
+  .tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+    margin-bottom: 1.75rem;
+  }
+
+  .tab {
+    font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 0.65rem 0.5rem;
+    border: 1px solid var(--rule);
+    background: var(--step-bg);
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+    line-height: 1.4;
+  }
+
+  .tab:hover { border-color: var(--ink); color: var(--ink); }
+
+  .tab.active {
+    background: var(--ink);
+    color: var(--paper);
+    border-color: var(--ink);
+  }
+
+  /* ---------- Inputs ---------- */
+  .controls {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 1.5rem;
+    align-items: start;
+    margin-bottom: 1.75rem;
+  }
+
+  .input-label {
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: block;
+    margin-bottom: 0.5rem;
+  }
+
+  .input-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    border: 1px solid var(--ink);
+    padding: 0.45rem 0.8rem;
+    background: white;
+    width: fit-content;
+  }
+
+  .input-row input {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 2rem;
+    color: var(--accent);
+    background: none;
+    border: none;
+    outline: none;
+    width: 72px;
+    -moz-appearance: textfield;
+  }
+
+  .input-row input::-webkit-outer-spin-button,
+  .input-row input::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+  .input-unit {
+    font-size: 0.8rem;
+    color: var(--muted);
+    align-self: flex-end;
+    padding-bottom: 0.35rem;
+  }
+
+  .ratio-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  .pill {
+    font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.05em;
+    padding: 0.35rem 0.65rem;
+    border: 1px solid var(--rule);
+    cursor: pointer;
+    background: var(--step-bg);
+    color: var(--muted);
+    transition: all 0.15s;
+  }
+
+  .pill:hover { border-color: var(--ink); color: var(--ink); }
+
+  .pill.active {
+    background: var(--accent);
+    color: var(--paper);
+    border-color: var(--accent);
+  }
+
+  .pill-sub {
+    font-size: 0.6rem;
+    color: var(--muted);
+    margin-top: 0.45rem;
+    letter-spacing: 0.04em;
+    line-height: 1.5;
+  }
+
+  /* ---------- Summary ---------- */
+  .summary {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.6rem;
+    margin-bottom: 1.75rem;
+  }
+
+  .summary-item {
+    background: var(--step-bg);
+    border: 1px solid var(--rule);
+    padding: 0.7rem 0.85rem;
+  }
+
+  .summary-item .val {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 1.35rem;
+    color: var(--accent);
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .summary-item .val span {
+    font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 0.68rem;
+    color: var(--muted);
+    margin-left: 2px;
+  }
+
+  .summary-item .lbl {
+    font-size: 0.58rem;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 0.35rem;
+  }
+
+  /* ---------- Steps ---------- */
+  .steps-title {
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .steps-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--rule);
+  }
+
+  .steps { display: flex; flex-direction: column; }
+
+  .step {
+    display: grid;
+    grid-template-columns: 2.2rem 1fr auto;
+    gap: 0.75rem;
+    align-items: start;
+    padding: 0.85rem 0;
+    border-bottom: 1px solid var(--rule);
+    opacity: 0;
+    transform: translateY(6px);
+    animation: fadeUp 0.3s ease forwards;
+  }
+
+  @keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
+
+  .step:last-child { border-bottom: none; }
+
+  .step-num {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 1.05rem;
+    color: var(--accent);
+    font-style: italic;
+    text-align: right;
+    padding-top: 0.1rem;
+  }
+
+  .step-name {
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 500;
+    margin-bottom: 0.2rem;
+  }
+
+  .step-desc {
+    font-size: 0.72rem;
+    color: var(--muted);
+    line-height: 1.55;
+  }
+
+  .step-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.35rem;
+    min-width: 76px;
+  }
+
+  .step-ml {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 1.05rem;
+    color: var(--ink);
+    white-space: nowrap;
+    line-height: 1;
+    text-align: right;
+  }
+
+  .step-ml .unit {
+    font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 0.62rem;
+    color: var(--muted);
+  }
+
+  .step-ml-label {
+    font-size: 0.55rem;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-align: right;
+  }
+
+  .step-total {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 0.92rem;
+    color: var(--accent);
+    white-space: nowrap;
+    line-height: 1;
+    border-top: 1px solid var(--rule);
+    padding-top: 0.3rem;
+    text-align: right;
+  }
+
+  .step-total .unit {
+    font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 0.58rem;
+    color: var(--muted);
+  }
+
+  .step-total-label {
+    font-size: 0.55rem;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--accent);
+    opacity: 0.7;
+    text-align: right;
+  }
+
+  .step-time {
+    font-size: 0.6rem;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+    text-align: right;
+    margin-top: 0.05rem;
+  }
+
+  .step-dash {
+    color: var(--muted);
+    font-size: 0.8rem;
+    padding-top: 0.2rem;
+  }
+
+  /* ---------- Notes ---------- */
+  .notes {
+    margin-top: 1.75rem;
+    padding: 1rem;
+    border: 1px dashed var(--rule);
+    font-size: 0.68rem;
+    color: var(--muted);
+    line-height: 1.75;
+    letter-spacing: 0.02em;
+  }
+
+  .notes strong { color: var(--ink); font-weight: 500; }
+
+  @media (max-width: 430px) {
+    .card { padding: 1.75rem 1.25rem; }
+    .controls { grid-template-columns: 1fr; gap: 1rem; }
+    .summary { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="header">
+    <h1>AeroPress Recipes</h1>
+  </div>
+
+  <div class="tabs" id="tabs"></div>
+
+  <div class="controls">
+    <div>
+      <label class="input-label" for="coffeeInput">Coffee dose</label>
+      <div class="input-row">
+        <input type="number" id="coffeeInput" value="15" min="5" max="200" step="0.5">
+        <span class="input-unit">g</span>
+      </div>
+    </div>
+    <div>
+      <span class="input-label">Strength · grams of coffee per liter of water</span>
+      <div class="ratio-pills" id="pills"></div>
+      <p class="pill-sub" id="pillSub"></p>
+    </div>
+  </div>
+
+  <div class="summary" id="summary"></div>
+
+  <div class="steps-title" id="stepsTitle">Brew sequence</div>
+  <div class="steps" id="steps"></div>
+
+  <div class="notes" id="notes"></div>
+</div>
+
+<script>
+  // ---------- helpers ----------
+  const r = n => Math.round(n);
+  const fmt = n => Number.isInteger(n) ? n : n.toFixed(1);
+
+  // pretty ratio for display: g/L -> 1:x
+  const asOneToX = gpl => '1:' + (1000 / gpl).toFixed(1).replace(/\.0$/, '');
+
+  // ---------- recipe definitions ----------
+  const RECIPES = {
+    wendelboe: {
+      label: 'Tim Wendelboe',
+      defaultDose: 14,
+      ratios: [65, 70, 75],
+      defaultRatio: 70,
+      steps(coffee, total) {
+        return [
+          { name: 'Set up', desc: 'AeroPress upright on your mug with a filter in the cap. Add coffee.', time: '0:00' },
+          { name: 'Pour & stir', desc: 'Pour in all the water, then stir 3 times.', pour: total, cum: total, time: '0:00' },
+          { name: 'Seal', desc: 'Insert the plunger and pull back slightly to create a vacuum, so coffee won’t drip through early.', time: '0:00 → 1:00' },
+          { name: 'Stir again', desc: 'Remove the plunger and stir 3 more times.', time: '1:00' },
+          { name: 'Press', desc: 'Reinsert the plunger and press all the way down. Pressing through the hiss is fine with this recipe.', time: '1:00 →' }
+        ];
+      },
+      notes: '<strong>By:</strong> Tim Wendelboe.<br><strong>Grind:</strong> Medium-fine.<br><strong>Temp:</strong> 96°C.<br><strong>Position:</strong> Upright.'
+    },
+
+    hoffmann: {
+      label: 'James Hoffmann',
+      defaultDose: 11,
+      ratios: [55, 60, 65],
+      defaultRatio: 55,
+      steps(coffee, total) {
+        return [
+          { name: 'Set up', desc: 'AeroPress upright on your mug with a filter in the cap. Add coffee.', time: '0:00' },
+          { name: 'Pour', desc: 'Pour in all the water quickly. No stirring.', pour: total, cum: total, time: '0:00' },
+          { name: 'Seal', desc: 'Insert the plunger and pull back slightly to create a vacuum.', time: '0:00 → 2:00' },
+          { name: 'Swirl', desc: 'Give the AeroPress a little shake back and forth to break the crust, like at a cupping.', time: '2:00' },
+          { name: 'Press', desc: 'Press down slowly, all the way through the hiss.', time: '2:30 →' }
+        ];
+      },
+      notes: '<strong>By:</strong> James Hoffmann.<br><strong>Grind:</strong> Very fine. Almost espresso, but not quite.<br><strong>Temp:</strong> Boiling, as hot as you can get it.<br><strong>Position:</strong> Upright.<br><strong>Average grinder?</strong> Go a little stronger: set the dose to 12 g and pick 60 g/L, so the water stays at 200 ml.'
+    },
+
+    wac: {
+      label: 'WAC 2019 · van Bunnik',
+      defaultDose: 30,
+      ratios: [125, 136.4, 150],
+      defaultRatio: 136.4,
+      steps(coffee, total) {
+        const brew = r(coffee * 10 / 3);          // 100 g water per 30 g coffee
+        const dilute = Math.max(total - brew, 0);
+        const conc = r(brew - coffee * 4 / 3);    // ≈60 ml concentrate from 100 g
+        return [
+          { name: 'Set up inverted', desc: 'AeroPress upside down, plunger in at the bottom. Add coffee and have the filter cap ready.', time: '0:00' },
+          { name: 'Pour', desc: 'Add the water quickly.', pour: brew, cum: brew, time: '0:00' },
+          { name: 'Stir', desc: 'Stir 20 times in 10 seconds.', time: '0:00 → 0:10' },
+          { name: 'Cap', desc: 'Screw the filter cap on.', time: '0:10' },
+          { name: 'Flip & press', desc: `At 40 seconds of total steep time, flip onto your server and press all the way. You’ll have about ${conc} ml of concentrate.`, time: '0:40 →' },
+          { name: 'Dilute', desc: 'Top up the concentrate with water and serve.', pour: dilute }
+        ];
+      },
+      notes: '<strong>By:</strong> Wendelien van Bunnik, 2019 World AeroPress Champion.<br><strong>Grind:</strong> Coarse, between drip and French press.<br><strong>Temp:</strong> 92°C.<br><strong>Position:</strong> Inverted.<br><strong>Filter:</strong> Aesir if you have one.<br><strong>Strength:</strong> brew water is fixed at 100 g per 30 g of coffee. The pills only change how much you dilute.'
+    },
+
+    forTwo: {
+      label: 'AeroPress for Two',
+      defaultDose: 26,
+      ratios: [60, 65, 70],
+      defaultRatio: 65,
+      steps(coffee, total) {
+        const bloom = r(total * 0.1875);
+        const half = r(total * 0.5);
+        return [
+          { name: 'Set up', desc: 'AeroPress upright on a server big enough for two cups. Use one Aesir filter, or two regular filters stacked. Add coffee.', time: '0:00' },
+          { name: 'Bloom', desc: 'Pour, then shake the AeroPress gently so all the grounds are wet. Wait 15 seconds.', pour: bloom, cum: bloom, time: '0:00 → 0:15' },
+          { name: 'First fill', desc: 'Add water up to half the total.', pour: half - bloom, cum: half, time: '0:15' },
+          { name: 'Pulse press', desc: 'Press the plunger down about an inch. Once you feel resistance, let the back pressure push it up and tilt it out to the side. Reinsert and repeat until all the water is through. This takes 45 seconds to 1 minute.', time: '~0:20 → ~1:15' },
+          { name: 'Second fill', desc: 'Add the rest of the water. Insert the plunger and pull it up slightly to create a vacuum seal.', pour: total - half, cum: total, time: '~1:15' },
+          { name: 'Steep & press', desc: 'Wait 1 minute, then press down until you hear the hiss.', time: '~2:15 →' }
+        ];
+      },
+      notes: '<strong>By:</strong> Asser Christensen.<br><strong>Grind:</strong> Medium.<br><strong>Temp:</strong> 93°C.<br><strong>Position:</strong> Upright.<br><strong>The trick:</strong> tilting the plunger out when resistance builds lets you add water again without disturbing the bed.<br><strong>Timing:</strong> the recipe gives step durations, not clock times, so the times above are approximate.'
+    },
+
+    lightRoast: {
+      label: 'Light Roast · Fruity',
+      defaultDose: 17,
+      ratios: [60, 65.4, 70],
+      defaultRatio: 65.4,
+      steps(coffee, total) {
+        return [
+          { name: 'Rinse filter', desc: 'AeroPress upright on your mug. Rinse the filter with hot water.', time: '0:00' },
+          { name: 'Pour', desc: 'Add the coffee, then all the water quickly. No stirring, no bloom.', pour: total, cum: total, time: '0:00' },
+          { name: 'Steep', desc: 'Leave it alone.', time: '0:00 → 0:50' },
+          { name: 'Press', desc: 'Insert the plunger and press over about 20 seconds. Stop before the hiss.', time: '0:50 → 1:10' }
+        ];
+      },
+      notes: '<strong>By:</strong> Reddit user Skelethon0703.<br><strong>Grind:</strong> Fine, close to espresso.<br><strong>Temp:</strong> Just off the boil.<br><strong>Position:</strong> Upright.<br><strong>Filter:</strong> Aesir if you have one, otherwise two regular filters stacked. Clarity is the point of this recipe.'
+    }
+  };
+
+  // ---------- state ----------
+  let currentRecipe = 'wendelboe';
+  let currentRatio = RECIPES.wendelboe.defaultRatio;
+
+  // ---------- rendering ----------
+  function renderTabs() {
+    document.getElementById('tabs').innerHTML = Object.entries(RECIPES).map(([key, rec]) =>
+      `<button class="tab ${key === currentRecipe ? 'active' : ''}" data-recipe="${key}">${rec.label}</button>`
+    ).join('');
+  }
+
+  function renderPills() {
+    const rec = RECIPES[currentRecipe];
+    document.getElementById('pills').innerHTML = rec.ratios.map(g => {
+      const extra = rec.ratioLabels ? `<br><span style="font-size:0.55rem; opacity:0.8">${rec.ratioLabels[g]}</span>` : '';
+      return `<button class="pill ${g === currentRatio ? 'active' : ''}" data-ratio="${g}" style="text-align:center; line-height:1.35">${fmt(g)} g/L${extra}</button>`;
+    }).join('');
+    document.getElementById('pillSub').textContent =
+      `${fmt(currentRatio)} g/L ≈ ${asOneToX(currentRatio)} coffee : water`;
+  }
+
+  function switchRecipe(key) {
+    currentRecipe = key;
+    const rec = RECIPES[key];
+    currentRatio = rec.defaultRatio;
+    document.getElementById('coffeeInput').value = rec.defaultDose;
+    renderTabs();
+    renderPills();
+    update();
+  }
+
+  function setRatio(g) {
+    currentRatio = g;
+    renderPills();
+    update();
+  }
+
+  function update() {
+    const rec = RECIPES[currentRecipe];
+    const coffee = parseFloat(document.getElementById('coffeeInput').value) || rec.defaultDose;
+    const total = r(coffee / currentRatio * 1000);
+
+    // summary
+    const cups = total / 250;
+    document.getElementById('summary').innerHTML = `
+      <div class="summary-item">
+        <div class="val">${total}<span>ml</span></div>
+        <div class="lbl">Total water</div>
+      </div>
+      <div class="summary-item">
+        <div class="val">${fmt(coffee)}<span>g</span></div>
+        <div class="lbl">Coffee</div>
+      </div>
+      <div class="summary-item">
+        <div class="val">${cups < 1 ? cups.toFixed(1) : (Math.round(cups * 2) / 2)}<span>cups</span></div>
+        <div class="lbl">≈ 250 ml each</div>
+      </div>`;
+
+    // steps
+    const steps = rec.steps(coffee, total);
+    document.getElementById('steps').innerHTML = steps.map((s, i) => `
+      <div class="step" style="animation-delay:${i * 0.04}s">
+        <div class="step-num">${i + 1}</div>
+        <div>
+          <div class="step-name">${s.name}</div>
+          <div class="step-desc">${s.desc}</div>
+        </div>
+        <div class="step-right">
+          ${s.pour !== undefined ? `
+            <div>
+              <div class="step-ml">${s.pour}<span class="unit"> ml</span></div>
+              <div class="step-ml-label">pour</div>
+            </div>
+            ${s.cum !== undefined ? `
+            <div>
+              <div class="step-total">${s.cum}<span class="unit"> ml</span></div>
+              <div class="step-total-label">scale reads</div>
+            </div>` : ''}
+          ` : `<div class="step-dash">—</div>`}
+          ${s.time ? `<div class="step-time">${s.time}</div>` : ''}
+        </div>
+      </div>`).join('');
+
+    document.getElementById('notes').innerHTML = rec.notes;
+  }
+
+  function init() {
+    document.getElementById('coffeeInput').addEventListener('input', update);
+
+    document.getElementById('tabs').addEventListener('click', e => {
+      const btn = e.target.closest('[data-recipe]');
+      if (btn) switchRecipe(btn.dataset.recipe);
+    });
+
+    document.getElementById('pills').addEventListener('click', e => {
+      const btn = e.target.closest('[data-ratio]');
+      if (btn) setRatio(parseFloat(btn.dataset.ratio));
+    });
+
+    renderTabs();
+    renderPills();
+    update();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+</script>
+</body>
+</html>
